@@ -1807,6 +1807,7 @@ def bigmamma(thresh,
     
     if ndi_input:
         ndi_input = scipy.io.loadmat(os.path.join(ndi_hengen_path, 'ndiouttmp.mat'))
+        ndi_input_sr = ndi_input['sr']
     else:
         # current_chan_dir = datdir + 'grouped_raw_dat_temp_folder/' + folder
         current_chan_dir = op.join(datdir, folder)
@@ -1829,10 +1830,12 @@ def bigmamma(thresh,
         #     "spike_sign": -1,
         #     "adjacency_radius": 100
         # }
+
+        print('ndi_input_sr', ndi_input_sr[0][0])
         params = {
-            "samplerate": sampling_frequency,
+            "samplerate": ndi_input_sr[0][0] if ndi_input else sampling_frequency,
         }
-        with open('params.json', 'w') as fp:
+        with open(op.join(ndi_hengen_path, 'params.json'), 'w') as fp:
             json.dump(params, fp)
     else:
         pass
@@ -1841,43 +1844,47 @@ def bigmamma(thresh,
     geom = 1
     if geom:
         # if ndi input pass in dummy geometry
-        if args.ndi_input:
-            geom = ndi_input['g']
+        # if args.ndi_input:
+        #     geom = ndi_input['g']
+        #     print("Intial geom before probefile {}\n".format(geom))
+        #     np.savetxt(op.join(ndi_hengen_path, "geom.csv"), geom, delimiter=",", fmt='%i')
             
         # else run code below
-        else:
-            tetrode = 1 # unused
-            # ckbn todo remove hardcoding
-            g = ss.utils.mdaio.readmda_header('raw.mda') # hardcoded
+       
+        tetrode = 1 # unused
+        # ckbn todo remove hardcoding
+        # g = ss.utils.mdaio.readmda_header('raw.mda') # hardcoded
 
-            print("\ng ", g)
-            num_channels = g.dims[0]
-            print("num_channels ", num_channels)
-            ntets = num_channels / 4
-            print("ntets ", ntets)
-            geom = np.zeros((num_channels, 2))
-            geom[:, 0] = range(num_channels)
+        # print("\ng ", g)
+        num_channels = 4
+        print("num_channels ", num_channels)
+        ntets = num_channels / 4
+        print("ntets ", ntets)
+        geom = np.zeros((num_channels, 2))
+        geom[:, 0] = range(num_channels)
 
-            for i in np.arange(0, num_channels, 4): # modify channels and channel groups accordingly
-                geom[i, :] = [100 * i + 0, 100 * i + 25]
-                geom[i + 1, :] = [100 * i + 25, 100 * i + 25]
-                geom[i + 2, :] = [100 * i - 25, 100 * i - 25]
-                geom[i + 3, :] = [100 * i + 25, 100 * i + 0]
+        for i in np.arange(0, num_channels, 4): # modify channels and channel groups accordingly
+            geom[i, :] = [100 * i + 0, 100 * i + 25]
+            geom[i + 1, :] = [100 * i + 25, 100 * i + 25]
+            geom[i + 2, :] = [100 * i - 25, 100 * i - 25]
+            geom[i + 3, :] = [100 * i + 25, 100 * i + 0]
 
-            print("Intial geom before probefile {}\n".format(geom))
-            np.savetxt("geom.csv", geom, delimiter=",", fmt='%i')
+        print("Intial geom before probefile\n {}".format(geom))
+        np.savetxt(op.join(ndi_hengen_path, "geom.csv"), geom, delimiter=',', fmt='%i')
     else:
         pass
     # ####################### Load the recording ##############################
     if ndi_input:
         ndi_input = scipy.io.loadmat(os.path.join(ndi_hengen_path, 'ndiouttmp.mat'))
 
-        ndi_timeseries = ndi_input['d']
         ndi_samplerate = ndi_input['sr']
+        geom = ndi_input['g']
+
+        print('geom:\n', geom)
 
         channels = geom[0,0]['channels'][0].tolist()
-        geometry = geom[0,0]['geometry'].tolist()
-        label = geom[0,0]['label'].tolist()
+        geometry = geom[0,0]['geometry'][0].tolist()
+        label = geom[0,0]['label'][0].tolist()
 
         # print('channels: \n', channels)
         # print('geometry: \n', geometry)
@@ -1896,7 +1903,7 @@ def bigmamma(thresh,
         f.close()
 
         # TODO: add geom to extractor
-        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate)
+        recording = se.MdaRecordingExtractor(ndi_hengen_path)
         recording_prb = recording.load_probe_file(probe_file=prb_file_name, verbose=True)
 
         if os.path.exists(prb_file_name):
@@ -2966,7 +2973,7 @@ if __name__ == '__main__':
             ndi_input = scipy.io.loadmat(os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat'))
             print('extraction_p: \n', ndi_input['extraction_p'])
             print('sorting_p: \n', ndi_input['sorting_p'])
-            file_path = os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat')
+            file_path = os.path.join(args.ndi_hengen_path, 'raw.mda')
             extraction_p = ndi_input['extraction_p']
             thresh = int(extraction_p['thresh'])
             num_channels = int(extraction_p['num_channels'])

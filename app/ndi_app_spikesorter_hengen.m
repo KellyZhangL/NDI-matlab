@@ -169,7 +169,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
 
-				writemda16i(d, 'ndiout.mda')
+				writemda16i(d', 'raw.mda')
 
 				% TODO: write json and probe_file to disk
 
