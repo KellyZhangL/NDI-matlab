@@ -137,7 +137,8 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			prev_folder = cd(ndi_hengen_path);
 
 			if exist('element') == 1
-				[d] = readtimeseries(element, 1, -Inf, Inf);
+				
+				d = readtimeseries(element, 1, -Inf, Inf);
 				sr = element.samplerate(1);
 				
 				geom_searchq = ndi_query('', 'depends_on', 'underlying_element_id', element.id()) & ndi_query('', 'isa', 'probe_geometry', ''); 
@@ -157,7 +158,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 				g.channels
 
-				g.geometry = g.geometry'
+				g.geometry
 
 				g.label
 

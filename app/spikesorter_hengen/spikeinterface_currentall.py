@@ -1880,15 +1880,13 @@ def bigmamma(thresh,
         ndi_samplerate = ndi_input['sr']
         geom = ndi_input['g']
 
-        print('geom:\n', geom)
+        channels = [i[0] for i in geom[0,0]['channels'].tolist()]
+        geometry = geom[0,0]['geometry'].tolist()
+        label = [i[0].tolist()[0] for i in geom[0,0]['label']]
 
-        channels = geom[0,0]['channels'][0].tolist()
-        geometry = geom[0,0]['geometry'][0].tolist()
-        label = geom[0,0]['label'][0].tolist()
-
-        # print('channels: \n', channels)
-        # print('geometry: \n', geometry)
-        # print('label: \n', label)
+        print('channels: \n', channels)
+        print('geometry: \n', geometry)
+        print('label: \n', label)
 
         geom = {
             '0': {'channels': channels, 'geometry': geometry, 'label': label}
@@ -1897,7 +1895,7 @@ def bigmamma(thresh,
         prb_file_name = os.path.join(ndi_hengen_path, 'geometry.prb')
 
         # Write .prb file for use, spikeinterface won't accept all info as variables, you need a prb file
-        f = open(prb_file_name,'w')
+        f = open(prb_file_name, 'w')
         f.write('channel_groups = ')
         print(geom, file=f)
         f.close()
@@ -2237,21 +2235,21 @@ def bigmamma(thresh,
     # else:
     #     pass
 
-    for p in plotpairs:
-        # c_o plotraw(**plotpairs[p], channel_group=channel_group)
-        plotraw(plotpairs[p]['rec'],
-                plotpairs[p]['label'],
-                channel_group,
-                clust_out_dir,
-                bn=bn,
-                nsec=3.0,
-                saveflag=1)
+    # for p in plotpairs:
+    #     # c_o plotraw(**plotpairs[p], channel_group=channel_group)
+    #     plotraw(plotpairs[p]['rec'],
+    #             plotpairs[p]['label'],
+    #             channel_group,
+    #             clust_out_dir,
+    #             bn=bn,
+    #             nsec=3.0,
+    #             saveflag=1)
 
     # Compute SNR
-    rec_length = compute_SNR(recording, clust_out_dir,
-                             channel_group,
-                             bn=bn,
-                             nsec=60)
+    # rec_length = compute_SNR(recording, clust_out_dir,
+    #                          channel_group,
+    #                          bn=bn,
+    #                          nsec=60)
 
     # #########################################################################
     # Now you are ready to spikesort using the :code:`sorters` module!
