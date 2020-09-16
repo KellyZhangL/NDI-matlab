@@ -168,6 +168,12 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				
 				% save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
 
+				ndiout_json = jsonencode(struct('sr', sr, 'g', g, 'extraction_p', extraction_p, 'sortiing_p', sorting_p, 'numchannels', numel(g.channels)))
+				
+				fid = fopen('ndiouttmp.json', 'w')
+				fwrite(fid, ndiout_json)
+				fclose(fid)
+
 				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
 
 				writemda16i(d', 'raw.mda')
