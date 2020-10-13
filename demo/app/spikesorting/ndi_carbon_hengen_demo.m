@@ -44,6 +44,12 @@ keyboard
 
 spikesorter_hengen = ndi.app.spikesorter_hengen(E)
 
+ % test python setup
+
+if ~spikesorter_hengen.test_python(),
+	error(['python3 or conda is not configured correctly.']);
+end;
+
 spikesorter_hengen.add_extraction_doc(extraction_name, [])
 
 spikesorter_hengen.add_sorting_doc(sorting_name, [])

@@ -1,26 +1,52 @@
-classdef hengen < ndi.app
+classdef spikesorter_hengen < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
+		conda_env % The conda Python in which to run the Hengen sorter
 	end % properties
 
 	methods
 
-		function ndi_app_spikesorter_hengen_obj = hengen(varargin)
+		function ndi_app_spikesorter_hengen_obj = spikesorter_hengen(varargin)
 		% NDI.APP.spikesorter.hengen - an app to sort spikewaves found in experiments using hengen Spike Sorter
 		%
-		% NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(EXPERIMENT)
+		% NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(ndi_session_object, conda_environment)
 		%
-		% Creates a new NDI.APP.spikesorter_hengen object that can operate on
+		% Creates a new ndi.app.spikesorter_hengen object that can operate on
 		% ndi.session objects. The app is named 'ndi_app_spikesorter_hengen'.
+		%
+		% conda_environment is the name of a conda Python environment to run in.
+		% If it is not provided, then the default is 'spike5'.
 		%
 			session = [];
 			name = 'ndi_app_spikesorter_hengen';
 			if numel(varargin)>0,
 				session = varargin{1};
 			end
+			if nargin<2,
+				conda_env = 'spike5';
+			else,
+				conda_env = varargin{2};
+			end;
+				
 			ndi_app_spikesorter_hengen_obj = ndi_app_spikesorter_hengen_obj@ndi.app(session, name);
+			ndi_app_spikesorter_hengen_obj.conda_env = conda_env;
 
 		end % ndi_app_spikesorter() creator
+
+		function [b,result] = test_python(ndi_app_spikesorter_hengen_obj)
+		% TEST_PYTHON - test the python app configuration
+		%
+		% [B,RESULT] = TEST_PYTHON(NDI_APP_SPIKESORTER_HENGEN_OBJ)
+		%
+		% Runs a test script that includes all of the python distributions
+		% in the CONDA environment. Returns 1 if everything works, 0 if not.
+		%
+		% RESULT returns the text output of the test function.
+		%
+			filename = [ndi.app.spikesorter_hengen.hengen_py_path() filesep 'hengenspikesort_test_setup.py'];
+			[status,result]=vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env, filename);
+			b = (status==0);
+		end; % test_python()
 
 		function extract_and_sort(ndi_app_spikesorter_hengen_obj, varargin)
 		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi.session.directory
@@ -100,9 +126,6 @@ classdef hengen < ndi.app
 				sorting_doc = sorting_doc{1}.document_properties.mountainsort_parameters;
 			end;
 			
-			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
-			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])
-			
 			prev_folder = cd(ndi_app_spikesorter_hengen_obj.session.path);
 
 			% deal with directory clustering_output
@@ -130,9 +153,7 @@ classdef hengen < ndi.app
 
 			ndi.globals;
 
-			% ndi_hengen_path = [ndipath filesep 'app' filesep 'spikesorter_hengen'];
-			[filepath] = fileparts(which('spikeinterface_currentall.py'))
-			ndi_hengen_path = filepath
+			ndi_hengen_path = ndi.app.spikesorter_hengen.hengen_py_path();
 
 			prev_folder = cd(ndi_hengen_path);
 
@@ -169,19 +190,18 @@ classdef hengen < ndi.app
 
 				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
 				ndiout_json = jsonencode(struct('sr', sr, 'g', g, 'extraction_p', extraction_p, 'sortiing_p', sorting_p, 'numchannels', numel(g.channels)));
-				fid = fopen('ndiouttmp.json', 'w')
-				fwrite(fid, ndiout_json)
-				fclose(fid)
+				vlt.file.str2text('ndiouttmp.json',ndiout_json);
 
 				writemda16i(d, 'raw.mda')
 
 				% TODO: write json and probe_file to disk
 
-				script_path = which('spikeinterface_currentall.py')
-				
-				system(['/usr/local/opt/python@3.8/bin/python3 ' script_path ' -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path ' --ndi-input'])
-			else
-				system(['/usr/local/opt/python@3.8/bin/python3 ' script_path ' -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path])
+				script_path = which('spikeinterface_currentall.py');
+				pyscript = [script_path ' -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ...
+						ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path '...
+						ndi_hengen_path ' --ndi-input']
+
+				vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env,pyscript);
 			end
 			
 			cd(prev_folder)
@@ -416,7 +436,7 @@ classdef hengen < ndi.app
 				g = [];
 				label = [];
 
-				nchannels = size(readtimeseries(probe, 1, 1, Inf), 2);
+				nchannels = size(readtimeseries(probe, 1, 0, 0.1), 2);  % only reading 0.1 second now
 
 				for channel=1:nchannels
 					channels(1,channel) = channel;
@@ -439,5 +459,18 @@ classdef hengen < ndi.app
 		end % add_geometry_doc
 
 	end % methods
+
+	methods (Static)
+		function pname = hengen_py_path()
+			% ndi.app.spikesorter_hengen.hengen_py_path - return the path to the Hengen lab sorter python distribution
+			%
+			% PNAME = ndi.app.spikesorter_hengen.hengen_py_path()
+			%
+			% Return the path to the Hengen sorter Python pathname
+			%
+				pname = which('spikeinterface_currentall.py');
+				pname = fileparts(pname);
+		end;
+	end; % 
 
 end % ndi_app_spikesorter
