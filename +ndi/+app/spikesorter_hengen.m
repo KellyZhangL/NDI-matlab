@@ -157,8 +157,12 @@ classdef spikesorter_hengen < ndi.app
 
 			prev_folder = cd(ndi_hengen_path);
 
+			t = ndi.app.timeseriesexporter(ndi_app_spikesorter_hengen_obj.session);
+
 			if exist('element') == 1
-				[d] = readtimeseries(element, 1, -Inf, Inf);
+				% convert to mda
+				t.epoch2mda16i(element,1,0,Inf,[-2000 2000],'raw.mda');			
+
 				sr = element.samplerate(1);
 				
 				geom_searchq = ndi.query('', 'depends_on', 'underlying_element_id', element.id()) & ndi.query('', 'isa', 'probe_geometry', ''); 
@@ -186,13 +190,9 @@ classdef spikesorter_hengen < ndi.app
 
 				sorting_p = sorting_doc
 				
-				% save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
-
 				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
 				ndiout_json = jsonencode(struct('sr', sr, 'g', g, 'extraction_p', extraction_p, 'sortiing_p', sorting_p, 'numchannels', numel(g.channels)));
 				vlt.file.str2text('ndiouttmp.json',ndiout_json);
-
-				writemda16i(d, 'raw.mda')
 
 				% TODO: write json and probe_file to disk
 
@@ -201,7 +201,8 @@ classdef spikesorter_hengen < ndi.app
 						ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path '...
 						ndi_hengen_path ' --ndi-input']
 
-				vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env,pyscript);
+				[status,results] = vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env,pyscript);
+				results,
 			end
 			
 			cd(prev_folder)
