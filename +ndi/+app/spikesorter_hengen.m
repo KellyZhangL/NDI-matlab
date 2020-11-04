@@ -44,7 +44,7 @@ classdef spikesorter_hengen < ndi.app
 		% RESULT returns the text output of the test function.
 		%
 			filename = [ndi.app.spikesorter_hengen.hengen_py_path() filesep 'hengenspikesort_test_setup.py'];
-			[status,result]=vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env, filename);
+			[status,result]=vlt.python.run3(filename);
 			b = (status==0);
 		end; % test_python()
 
@@ -201,7 +201,7 @@ classdef spikesorter_hengen < ndi.app
 						ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path '...
 						ndi_hengen_path ' --ndi-input']
 
-				[status,results] = vlt.python.condarun3(ndi_app_spikesorter_hengen_obj.conda_env,pyscript);
+				[status,results] = vlt.python.run3(pyscript);
 				results,
 			end
 			
@@ -229,7 +229,14 @@ classdef spikesorter_hengen < ndi.app
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
 			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])
-			system(['/usr/local/opt/python@3.8/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.session.path])
+			
+			script_path = which('rate_neuron_quality.py')
+
+			pyscript = [script_path ' --experiment-path '  ndi_app_spikesorter_hengen_obj.session.path]
+			
+			[status,results] = vlt.python.run3(pyscript);
+			results,
+			% system(['/usr/local/opt/python@3.8/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.session.path])
 
 			load('tmp.mat', 'n');
 

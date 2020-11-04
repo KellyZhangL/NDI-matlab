@@ -29,8 +29,8 @@ end
 
 E = ndi.session.dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
-ced_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt'); 
-ced_vis_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt'); 
+ced_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi.daq.metadata.epochprobemap_daqsystem', 'probemap.txt'); 
+ced_vis_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi.daq.metadata.epochprobemap_daqsystem', 'probemap.txt'); 
 
 % Create daqreader objects for our daq systems
 ced_rdr = ndi.daq.reader.mfdaq.cedspike2(); 
@@ -51,15 +51,15 @@ sorting_name = 'hengen_sorting_test'
 
 probes = E.getprobes()
 
-spikesorter_hengen = ndi.ap0.spikesorter.hengen(E)
+spikesorter_hengen = ndi.app.spikesorter_hengen(E)
 
 spikesorter_hengen.add_extraction_doc(extraction_name, [])
 
 spikesorter_hengen.add_sorting_doc(sorting_name, [])
 
-spikesorter_hengen.add_geometry_doc(probes{1})
+spikesorter_hengen.add_geometry_doc(probes{3})
 
-spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, sorting_name, 1)
+spikesorter_hengen.extract_and_sort(probes{3}, extraction_name, sorting_name, 1)
 
 spikesorter_hengen.rate_neuron_quality
 
